@@ -111,6 +111,36 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'MenuAI Backend Server is running' });
 });
 
+// Debug endpoint to check file availability
+app.get('/api/debug/files', (req, res) => {
+    const fs = require('fs');
+    const criticalFiles = [
+        'styles.css',
+        'results-styles.css', 
+        'sad-gif.gif',
+        'SPEAK.png',
+        'Camera-button.png',
+        'back-arrow.svg',
+        'bd1b62afae645bcedafd9001263b3c87dce15772.png',
+        '6dda884d01f5eb17201b2606849277e69541e05c.png'
+    ];
+    
+    const fileStatus = {};
+    criticalFiles.forEach(file => {
+        const filePath = path.join(__dirname, file);
+        fileStatus[file] = {
+            exists: fs.existsSync(filePath),
+            path: filePath,
+            __dirname: __dirname
+        };
+    });
+    
+    res.json({
+        working_directory: __dirname,
+        file_status: fileStatus
+    });
+});
+
 // Test OpenAI integration with a simple prompt
 app.get('/api/test-openai', async (req, res) => {
     try {
