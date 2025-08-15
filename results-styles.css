@@ -1,0 +1,563 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Ropa Sans', sans-serif;
+    background-color: #faf5e8;
+    color: #3d3d3d;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+.container {
+    position: relative;
+    width: 100vw;
+    min-height: 100vh;
+    background-color: #faf5e8;
+}
+
+/* Background gradient - fixed position */
+.background-blur {
+    position: fixed;
+    left: 0;
+    top: 391px;
+    width: 100vw;
+    min-width: 402px;
+    height: 482px;
+    background: linear-gradient(to left, #dd2424, #f43c9b);
+    filter: blur(76.65px);
+    opacity: 0.14;
+    border-radius: 13px;
+    right: 0;
+    max-width: none;
+    z-index: 1;
+}
+
+/* Fixed header */
+.fixed-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    height: 90px;
+}
+
+.header-gradient {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: rgba(250, 245, 232, 0.9);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+}
+
+.header-content {
+    position: relative;
+    z-index: 11;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 100%;
+    max-width: 100%;
+}
+
+.back-button {
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.back-button:hover {
+    background-color: rgba(243, 152, 129, 0.1);
+    transform: scale(1.05);
+}
+
+.back-button:active {
+    transform: scale(0.95);
+}
+
+.back-arrow-icon {
+    width: 22px;
+    height: 18px;
+    object-fit: contain;
+}
+
+.header-spacer {
+    width: 32px; /* Same width as back button for perfect centering */
+}
+
+/* Page title - now in fixed header */
+.page-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 30px;
+    font-weight: normal;
+    text-align: center;
+    color: #000000;
+    line-height: 1;
+    margin: 0;
+    flex: 1;
+    padding: 0 10px;
+}
+
+/* Main content - with top padding for fixed header */
+.main-content {
+    position: relative;
+    z-index: 2;
+    padding: 95px 20px 0 20px; /* Top padding reduced by 15px for less spacing */
+    max-width: 402px;
+    margin: 0 auto;
+}
+
+/* Loading state */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+}
+
+.loading-spinner {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 25px auto;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cooking-pot {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+/* Pressure Cooker body */
+.pot-body {
+    width: 65px;
+    height: 45px;
+    background: linear-gradient(to bottom, #f39881, #ed6a48);
+    border: 3px solid #d85a42;
+    border-radius: 12px;
+    position: relative;
+    animation: cooker-movement 2.5s ease-in-out infinite;
+    box-shadow: inset 0 3px 6px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Pressure Cooker lid */
+.pot-lid {
+    position: absolute;
+    top: -10px;
+    left: -6px;
+    width: 71px;
+    height: 18px;
+    background: linear-gradient(to bottom, #ed6a48, #d85a42);
+    border: 2px solid #d85a42;
+    border-radius: 35px;
+    box-shadow: inset 0 3px 6px rgba(255,255,255,0.4), 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* Pressure whistle */
+.pressure-whistle {
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 12px;
+    background: linear-gradient(to bottom, #d85a42, #b84a32);
+    border-radius: 3px;
+    animation: whistle-shake 0.8s ease-in-out infinite;
+}
+
+.pressure-whistle::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 4px;
+    background: #d85a42;
+    border-radius: 4px 4px 0 0;
+}
+
+/* Pressure Cooker handles */
+.pot-handle-left, .pot-handle-right {
+    position: absolute;
+    top: 10px;
+    width: 14px;
+    height: 18px;
+    border: 3px solid #d85a42;
+    border-radius: 10px;
+    background: rgba(237, 106, 72, 0.1);
+}
+
+.pot-handle-left {
+    left: -14px;
+    border-right: none;
+}
+
+.pot-handle-right {
+    right: -14px;
+    border-left: none;
+}
+
+/* Steam bubbles */
+.steam-bubble {
+    position: absolute;
+    background: #ed6a48;
+    border-radius: 50%;
+    opacity: 0;
+}
+
+.steam-1 {
+    width: 9px;
+    height: 9px;
+    left: 46%;
+    bottom: 70px;
+    animation: steam-rise 1.5s ease-in-out infinite;
+}
+
+.steam-2 {
+    width: 7px;
+    height: 7px;
+    left: 50%;
+    bottom: 70px;
+    animation: steam-rise 1.5s ease-in-out infinite 0.2s;
+}
+
+.steam-3 {
+    width: 8px;
+    height: 8px;
+    left: 54%;
+    bottom: 70px;
+    animation: steam-rise 1.5s ease-in-out infinite 0.4s;
+}
+
+/* Animations */
+@keyframes cooker-movement {
+    0%, 100% { 
+        transform: translateY(0px) rotate(0deg);
+    }
+    25% { 
+        transform: translateY(-2px) rotate(0.8deg);
+    }
+    50% { 
+        transform: translateY(-1px) rotate(0deg);
+    }
+    75% { 
+        transform: translateY(-2px) rotate(-0.8deg);
+    }
+}
+
+@keyframes whistle-shake {
+    0%, 100% { 
+        transform: translateX(-50%) rotate(0deg);
+    }
+    25% { 
+        transform: translateX(-50%) rotate(2deg);
+    }
+    75% { 
+        transform: translateX(-50%) rotate(-2deg);
+    }
+}
+
+@keyframes steam-rise {
+    0% { 
+        opacity: 0;
+        transform: translateY(0px) scale(0.8);
+    }
+    15% { 
+        opacity: 0.9;
+        transform: translateY(-8px) scale(1);
+    }
+    70% { 
+        opacity: 0.7;
+        transform: translateY(-25px) scale(1.3);
+    }
+    100% { 
+        opacity: 0;
+        transform: translateY(-40px) scale(1.6);
+    }
+}
+
+.loading-text {
+    font-size: 17px;
+    color: #767676;
+    text-align: center;
+}
+
+/* Error state */
+.error-container {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.error-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    object-fit: cover;
+}
+
+.error-text {
+    font-size: 16px;
+    color: #767676;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.retry-button {
+    background: linear-gradient(to right, #ed6a48, #f39881);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.retry-button:hover {
+    transform: scale(1.05);
+}
+
+/* Results container */
+.results-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    align-items: center;
+    margin-top: 0;
+}
+
+/* Dish cards */
+.dish-card {
+    background: #fff2e8;
+    border: 2px solid #f3dacd;
+    border-radius: 8px;
+    padding: 0;
+    width: 342px;
+    max-width: 342px;
+    margin: 0 auto 20px auto;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.dish-card:last-child {
+    margin-bottom: 20px;
+}
+
+.dish-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px 8px 20px;
+    margin-bottom: 0;
+}
+
+.action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 6px;
+}
+
+.dish-name {
+    font-family: 'Ropa Sans', sans-serif;
+    font-size: 18px;
+    font-weight: normal;
+    color: #3d3d3d;
+    line-height: 20px;
+    flex: 1;
+    margin: 0;
+}
+
+.camera-button, .speak-button {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0px;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+.camera-button:hover, .speak-button:hover {
+    transform: scale(1.1);
+    opacity: 0.8;
+}
+
+.camera-button:active, .speak-button:active {
+    transform: scale(0.95);
+}
+
+.camera-icon, .speak-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+/* Divider lines */
+.divider {
+    height: 2px;
+    background: #f3dacd;
+    margin: 0 20px 14px 20px;
+}
+
+/* Dish description */
+.dish-description {
+    font-family: 'Ropa Sans', sans-serif;
+    font-size: 16px;
+    font-weight: normal;
+    color: #767676;
+    line-height: 20px;
+    padding: 0 20px;
+    margin: 0 0 14px 0;
+}
+
+
+
+/* Nutrition tags */
+.nutrition-tags {
+    display: flex;
+    justify-content: flex-start;
+    gap: 25px;
+    padding: 0 20px 20px 20px;
+    flex-wrap: wrap;
+}
+
+.nutrition-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nutrition-tag span {
+    font-family: 'Ropa Sans', sans-serif;
+    font-size: 16px;
+    color: #767676;
+    line-height: 20px;
+}
+
+/* Nutrition SVG icons */
+.nutrition-icon {
+    width: 18px;
+    height: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nutrition-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+    .fixed-header {
+        height: 80px;
+    }
+    
+    .page-title {
+        padding: 0 5px;
+    }
+    
+    .back-button {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .back-arrow-icon {
+        width: 18px;
+        height: 14px;
+    }
+    
+    .header-spacer {
+        width: 28px;
+    }
+    
+    .main-content {
+        padding: 85px 15px 0 15px;
+    }
+    
+    .dish-card {
+        width: calc(100vw - 40px);
+        max-width: 360px;
+        margin: 0 auto 15px auto;
+    }
+    
+    .nutrition-tags {
+        gap: 20px;
+    }
+    
+    .background-blur {
+        width: 100vw;
+        min-width: 320px;
+    }
+}
+
+@media (max-width: 400px) {
+    .dish-card {
+        width: calc(100vw - 30px);
+        max-width: 340px;
+    }
+    
+    .main-content {
+        padding: 85px 10px 0 10px;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .main-content {
+        padding: 90px 20px 0 20px;
+    }
+    
+    .dish-card {
+        width: 100%;
+        max-width: 400px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .background-blur {
+        max-width: 600px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    .container {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+} 

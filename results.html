@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MenuAI - Decoded Dishes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Ropa+Sans&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="results-styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Fixed header with gradient background -->
+        <div class="fixed-header">
+            <div class="header-gradient"></div>
+            <div class="header-content">
+                <button class="back-button" onclick="goBack()" title="Back to upload">
+                    <img src="back-arrow.svg" alt="Back" class="back-arrow-icon">
+                </button>
+                <h1 class="page-title">Decoded Dishes</h1>
+                <div class="header-spacer"></div>
+            </div>
+        </div>
+        
+        <!-- Background gradient (same as original) -->
+        <div class="background-blur"></div>
+        
+        <!-- Main content -->
+        <div class="main-content">
+            
+            <!-- Loading state -->
+            <div class="loading-container" id="loading-container">
+                <div class="loading-spinner">
+                    <!-- Pressure Cooker -->
+                    <div class="cooking-pot">
+                        <!-- Steam bubbles -->
+                        <div class="steam-bubble steam-1"></div>
+                        <div class="steam-bubble steam-2"></div>
+                        <div class="steam-bubble steam-3"></div>
+                        
+                        <!-- Cooker body -->
+                        <div class="pot-body">
+                            <div class="pot-lid">
+                                <div class="pressure-whistle"></div>
+                            </div>
+                            <div class="pot-handle-left"></div>
+                            <div class="pot-handle-right"></div>
+                        </div>
+                    </div>
+                </div>
+                <p class="loading-text">Good food takes time...</p>
+            </div>
+            
+            <!-- Results container -->
+            <div class="results-container" id="results-container" style="display: none;">
+                <!-- Results will be dynamically inserted here -->
+            </div>
+            
+            <!-- Error state -->
+            <div class="error-container" id="error-container" style="display: none;">
+                <img src="sad gif.gif" alt="Oops" class="error-image">
+                <p class="error-text">Oops! Either the internet hiccupped or we did. Give it another try</p>
+                <div style="margin: 20px 0;">
+                    <button class="retry-button" onclick="window.history.back()">Try again</button>
+                </div>
+            </div>
+            
+            <!-- Non-menu error state -->
+            <div class="error-container" id="non-menu-error-container" style="display: none;">
+                <img src="sad gif.gif" alt="Oops" class="error-image">
+                <p class="error-text">Oops, these images don't appear to be a restaurant menu</p>
+                <div style="margin: 20px 0;">
+                    <button class="retry-button" onclick="window.history.back()">Try again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get images from localStorage
+        const selectedImages = JSON.parse(localStorage.getItem('selectedImages') || '[]');
+        
+        if (selectedImages.length === 0) {
+            // No images, redirect back
+            window.location.href = 'index.html';
+        } else {
+            // Process images with OpenAI
+            processMenuImages(selectedImages);
+        }
+        
+        // Function removed - now using the updated processMenuImages function below
+        
+        async function processMenuImages(images) {
+            try {
+                showLoading();
+                
+                // Call the backend API instead of OpenAI directly
+                const response = await fetch('/api/analyze-menu', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        images: images
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    if (errorData.error === 'NOT_MENU_IMAGES') {
+                        // Special handling for non-menu images
+                        hideLoading();
+                        showNonMenuError();
+                        return;
+                    }
+                    throw new Error(errorData.error || `Server error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const dishes = data.dishes || [];
+                
+                hideLoading();
+                displayResults(dishes);
+                
+            } catch (error) {
+                console.error('Error processing images:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack
+                });
+                hideLoading();
+                showError(error.message);
+            }
+        }
+        
+        function displayResults(dishes) {
+            const container = document.getElementById('results-container');
+            container.innerHTML = '';
+            
+            dishes.forEach((dish, index) => {
+                const dishCard = createDishCard(dish, index);
+                container.appendChild(dishCard);
+            });
+            
+            container.style.display = 'block';
+        }
+        
+
+
+        function getNutritionLevel(value) {
+            if (!value) return 'low';
+            return value.toLowerCase(); // 'high', 'medium', 'low'
+        }
+        
+        function getNutritionIcon(type, level) {
+            if (!level) level = 'low';
+            const normalizedLevel = level.toLowerCase();
+            
+            // Get color based on level
+            let color;
+            switch (normalizedLevel) {
+                case 'high':
+                    color = '#FF8C8C'; // Red from Figma
+                    break;
+                case 'medium':
+                    color = '#FEB381'; // Orange from Figma
+                    break;
+                case 'low':
+                default:
+                    color = '#9CD9A2'; // Green from Figma
+                    break;
+            }
+            
+            // Return the exact Figma SVG with hardcoded color
+            return `<svg width="18" height="15" viewBox="0 0 18 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3.80385 6C6.11325 2 7.26795 7.88735e-07 9 3.90482e-07C9 3.90482e-07 9 3.90482e-07 9 3.90482e-07C10.7321 8.54495e-07 11.8868 2 14.1962 6V6C16.5056 10 17.6603 12 16.7942 13.5C16.7942 13.5 16.7942 13.5 16.7942 13.5C15.9282 15 13.6188 15 9 15V15C4.3812 15 2.0718 15 1.20577 13.5C1.20577 13.5 1.20577 13.5 1.20577 13.5C0.339747 12 1.49445 10 3.80385 6V6Z" fill="${color}"/>
+            </svg>`;
+        }
+        
+        function createDishCard(dish, index) {
+            const card = document.createElement('div');
+            card.className = 'dish-card';
+            
+                        card.innerHTML = `
+                <div class="dish-header">
+                    <h3 class="dish-name">${dish.original_name}</h3>
+                    <div class="action-buttons">
+                        <button class="speak-button" onclick="searchPronunciation('${dish.original_name.replace(/'/g, '\\\'')}')" title="How to pronounce">
+                            <img src="SPEAK.png" alt="Speak" class="speak-icon">
+                        </button>
+                        <button class="camera-button" onclick="searchGoogleImages('${dish.original_name.replace(/'/g, '\\\'')}')" title="Search on Google Images">
+                            <img src="Camera-button.png" alt="Camera" class="camera-icon">
+                        </button>
+                    </div>
+                </div>
+                <div class="divider"></div>
+                <p class="dish-description">${dish.simple_description}</p>
+                <div class="divider"></div>
+                <div class="nutrition-tags">
+                    <div class="nutrition-tag">
+                        <div class="nutrition-icon">
+                            ${getNutritionIcon('calories', dish.nutrition.calories)}
+                        </div>
+                        <span>Calories</span>
+                    </div>
+                    <div class="nutrition-tag">
+                        <div class="nutrition-icon">
+                            ${getNutritionIcon('sugar', dish.nutrition.sugar)}
+                        </div>
+                        <span>Sugar</span>
+                    </div>
+                    <div class="nutrition-tag">
+                        <div class="nutrition-icon">
+                            ${getNutritionIcon('unhealthy_fat', dish.nutrition.unhealthy_fat || dish.nutrition.fat)}
+                        </div>
+                        <span>Unhealthy Fat</span>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        function showLoading() {
+            document.getElementById('loading-container').style.display = 'block';
+            document.getElementById('results-container').style.display = 'none';
+            document.getElementById('error-container').style.display = 'none';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading-container').style.display = 'none';
+        }
+        
+        function showError(errorMessage = '') {
+            const errorContainer = document.getElementById('error-container');
+            
+            // Show error container and hide other containers
+            errorContainer.style.display = 'block';
+            document.getElementById('loading-container').style.display = 'none';
+            document.getElementById('results-container').style.display = 'none';
+            document.getElementById('non-menu-error-container').style.display = 'none';
+        }
+        
+        function showNonMenuError() {
+            const nonMenuErrorContainer = document.getElementById('non-menu-error-container');
+            
+            // Show non-menu error container and hide other containers
+            nonMenuErrorContainer.style.display = 'block';
+            document.getElementById('loading-container').style.display = 'none';
+            document.getElementById('results-container').style.display = 'none';
+            document.getElementById('error-container').style.display = 'none';
+        }
+        
+        function searchGoogleImages(dishName) {
+            // Open Google Images with the dish name search in new tab
+            const searchQuery = encodeURIComponent(dishName);
+            const googleImagesUrl = `https://www.google.com/search?tbm=isch&q=${searchQuery}`;
+            const newWindow = window.open(googleImagesUrl, '_blank', 'noopener,noreferrer');
+            if (newWindow) {
+                newWindow.focus();
+            }
+        }
+
+        function searchPronunciation(dishName) {
+            // Open Google search for pronunciation of the dish name in new tab
+            const searchQuery = encodeURIComponent(`how to pronounce ${dishName}`);
+            const googleUrl = `https://www.google.com/search?q=${searchQuery}`;
+            const newWindow = window.open(googleUrl, '_blank', 'noopener,noreferrer');
+            if (newWindow) {
+                newWindow.focus();
+            }
+        }
+
+        function goBack() {
+            // Navigate back to the upload page
+            window.location.href = 'index.html';
+        }
+
+
+    </script>
+</body>
+</html> 
