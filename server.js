@@ -30,73 +30,18 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Serve static files with proper error handling for Vercel
+// Serve static files with proper configuration
 app.use(express.static(__dirname, {
+    maxAge: '1d', // Cache for 1 day
     setHeaders: (res, filePath) => {
+        // Set proper content types
         if (filePath.endsWith('.css')) {
             res.setHeader('Content-Type', 'text/css');
         } else if (filePath.endsWith('.js')) {
             res.setHeader('Content-Type', 'application/javascript');
-        } else if (filePath.endsWith('.png')) {
-            res.setHeader('Content-Type', 'image/png');
-        } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-            res.setHeader('Content-Type', 'image/jpeg');
-        } else if (filePath.endsWith('.gif')) {
-            res.setHeader('Content-Type', 'image/gif');
-        } else if (filePath.endsWith('.svg')) {
-            res.setHeader('Content-Type', 'image/svg+xml');
         }
     }
 }));
-
-// Fallback static file serving for Vercel serverless environment
-const serveStaticFile = (fileName, contentType) => {
-    return (req, res) => {
-        const filePath = path.join(__dirname, fileName);
-        res.setHeader('Content-Type', contentType);
-        res.sendFile(filePath, (err) => {
-            if (err) {
-                console.error(`Error serving ${fileName}:`, err);
-                res.status(404).send(`File ${fileName} not found`);
-            }
-        });
-    };
-};
-
-// Individual static file routes for critical files
-app.get('/styles.css', serveStaticFile('styles.css', 'text/css'));
-app.get('/results-styles.css', serveStaticFile('results-styles.css', 'text/css'));
-app.get('/sad-gif.gif', serveStaticFile('sad-gif.gif', 'image/gif'));
-app.get('/SPEAK.png', serveStaticFile('SPEAK.png', 'image/png'));
-app.get('/Camera-button.png', serveStaticFile('Camera-button.png', 'image/png'));
-app.get('/back-arrow.svg', serveStaticFile('back-arrow.svg', 'image/svg+xml'));
-app.get('/bd1b62afae645bcedafd9001263b3c87dce15772.png', serveStaticFile('bd1b62afae645bcedafd9001263b3c87dce15772.png', 'image/png'));
-app.get('/6dda884d01f5eb17201b2606849277e69541e05c.png', serveStaticFile('6dda884d01f5eb17201b2606849277e69541e05c.png', 'image/png'));
-
-// Wildcard routes for other assets (SVG nutrition icons)
-app.get('/*.svg', (req, res) => {
-    const fileName = path.basename(req.path);
-    const filePath = path.join(__dirname, fileName);
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.sendFile(filePath, (err) => {
-        if (err) {
-            console.error(`Error serving SVG ${fileName}:`, err);
-            res.status(404).send(`SVG file not found: ${fileName}`);
-        }
-    });
-});
-
-app.get('/*.png', (req, res) => {
-    const fileName = path.basename(req.path);
-    const filePath = path.join(__dirname, fileName);
-    res.setHeader('Content-Type', 'image/png');
-    res.sendFile(filePath, (err) => {
-        if (err) {
-            console.error(`Error serving PNG ${fileName}:`, err);
-            res.status(404).send(`PNG file not found: ${fileName}`);
-        }
-    });
-});
 
 // Configure multer for handling file uploads
 const upload = multer({
@@ -436,12 +381,8 @@ app.get('*', (req, res) => {
         return res.status(404).send('API endpoint not found');
     }
     
-    // For static files, return 404 if not found
-    if (req.path.includes('.')) {
-        return res.status(404).send('File not found');
-    }
-    
     // For all other routes (SPA routing), serve index.html
+    // Let express.static handle static files before this route
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
