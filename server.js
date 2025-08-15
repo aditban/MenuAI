@@ -30,7 +30,8 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Static files are handled directly by Vercel, not by Express
+// Serve static files with Express (simpler approach)
+app.use(express.static(__dirname));
 
 // Configure multer for handling file uploads
 const upload = multer({
@@ -350,15 +351,24 @@ Focus on dishes that are clearly visible and readable. If text is in another lan
     }
 }
 
-// Fallback for any unmatched routes (should be minimal since Vercel handles most routing)
+// Serve main pages
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/results.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'results.html'));
+});
+
+// Fallback for SPA routing
 app.get('*', (req, res) => {
     // Skip API routes
     if (req.path.startsWith('/api/')) {
         return res.status(404).send('API endpoint not found');
     }
     
-    // For any other unmatched routes, return 404
-    res.status(404).send('Page not found');
+    // For all other routes, serve index.html (SPA behavior)
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Error handling middleware
