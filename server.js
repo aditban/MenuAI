@@ -30,44 +30,72 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Serve static files explicitly
-app.use(express.static(path.join(__dirname), {
-    setHeaders: (res, path, stat) => {
-        // Set cache headers for static files
-        if (path.endsWith('.css')) {
-            res.set('Content-Type', 'text/css');
-        } else if (path.endsWith('.js')) {
-            res.set('Content-Type', 'application/javascript');
+// Serve static files with proper error handling for Vercel
+app.use(express.static(__dirname, {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+        } else if (filePath.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        } else if (filePath.endsWith('.png')) {
+            res.setHeader('Content-Type', 'image/png');
+        } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+            res.setHeader('Content-Type', 'image/jpeg');
+        } else if (filePath.endsWith('.gif')) {
+            res.setHeader('Content-Type', 'image/gif');
+        } else if (filePath.endsWith('.svg')) {
+            res.setHeader('Content-Type', 'image/svg+xml');
         }
     }
 }));
 
-// Serve individual static files explicitly for Vercel
-app.get('/styles.css', (req, res) => {
-    res.setHeader('Content-Type', 'text/css');
-    res.sendFile(path.join(__dirname, 'styles.css'));
-});
+// Fallback static file serving for Vercel serverless environment
+const serveStaticFile = (fileName, contentType) => {
+    return (req, res) => {
+        const filePath = path.join(__dirname, fileName);
+        res.setHeader('Content-Type', contentType);
+        res.sendFile(filePath, (err) => {
+            if (err) {
+                console.error(`Error serving ${fileName}:`, err);
+                res.status(404).send(`File ${fileName} not found`);
+            }
+        });
+    };
+};
 
-app.get('/results-styles.css', (req, res) => {
-    res.setHeader('Content-Type', 'text/css');
-    res.sendFile(path.join(__dirname, 'results-styles.css'));
-});
+// Individual static file routes for critical files
+app.get('/styles.css', serveStaticFile('styles.css', 'text/css'));
+app.get('/results-styles.css', serveStaticFile('results-styles.css', 'text/css'));
+app.get('/sad-gif.gif', serveStaticFile('sad-gif.gif', 'image/gif'));
+app.get('/SPEAK.png', serveStaticFile('SPEAK.png', 'image/png'));
+app.get('/Camera-button.png', serveStaticFile('Camera-button.png', 'image/png'));
+app.get('/back-arrow.svg', serveStaticFile('back-arrow.svg', 'image/svg+xml'));
+app.get('/bd1b62afae645bcedafd9001263b3c87dce15772.png', serveStaticFile('bd1b62afae645bcedafd9001263b3c87dce15772.png', 'image/png'));
+app.get('/6dda884d01f5eb17201b2606849277e69541e05c.png', serveStaticFile('6dda884d01f5eb17201b2606849277e69541e05c.png', 'image/png'));
 
-// Serve images and other assets
-app.get('/*.png', (req, res) => {
-    res.sendFile(path.join(__dirname, req.path));
-});
-
-app.get('/*.jpg', (req, res) => {
-    res.sendFile(path.join(__dirname, req.path));
-});
-
-app.get('/*.gif', (req, res) => {
-    res.sendFile(path.join(__dirname, req.path));
-});
-
+// Wildcard routes for other assets (SVG nutrition icons)
 app.get('/*.svg', (req, res) => {
-    res.sendFile(path.join(__dirname, req.path));
+    const fileName = path.basename(req.path);
+    const filePath = path.join(__dirname, fileName);
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error(`Error serving SVG ${fileName}:`, err);
+            res.status(404).send(`SVG file not found: ${fileName}`);
+        }
+    });
+});
+
+app.get('/*.png', (req, res) => {
+    const fileName = path.basename(req.path);
+    const filePath = path.join(__dirname, fileName);
+    res.setHeader('Content-Type', 'image/png');
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error(`Error serving PNG ${fileName}:`, err);
+            res.status(404).send(`PNG file not found: ${fileName}`);
+        }
+    });
 });
 
 // Configure multer for handling file uploads
