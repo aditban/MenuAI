@@ -30,8 +30,45 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Serve static files
-app.use(express.static(path.join(__dirname)));
+// Serve static files explicitly
+app.use(express.static(path.join(__dirname), {
+    setHeaders: (res, path, stat) => {
+        // Set cache headers for static files
+        if (path.endsWith('.css')) {
+            res.set('Content-Type', 'text/css');
+        } else if (path.endsWith('.js')) {
+            res.set('Content-Type', 'application/javascript');
+        }
+    }
+}));
+
+// Serve individual static files explicitly for Vercel
+app.get('/styles.css', (req, res) => {
+    res.setHeader('Content-Type', 'text/css');
+    res.sendFile(path.join(__dirname, 'styles.css'));
+});
+
+app.get('/results-styles.css', (req, res) => {
+    res.setHeader('Content-Type', 'text/css');
+    res.sendFile(path.join(__dirname, 'results-styles.css'));
+});
+
+// Serve images and other assets
+app.get('/*.png', (req, res) => {
+    res.sendFile(path.join(__dirname, req.path));
+});
+
+app.get('/*.jpg', (req, res) => {
+    res.sendFile(path.join(__dirname, req.path));
+});
+
+app.get('/*.gif', (req, res) => {
+    res.sendFile(path.join(__dirname, req.path));
+});
+
+app.get('/*.svg', (req, res) => {
+    res.sendFile(path.join(__dirname, req.path));
+});
 
 // Configure multer for handling file uploads
 const upload = multer({
@@ -321,12 +358,32 @@ Focus on dishes that are clearly visible and readable. If text is in another lan
     }
 }
 
-// Fallback route to serve index.html for frontend routing
+// Serve main pages explicitly
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/index.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/results.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'results.html'));
+});
+
+// Fallback route for any other frontend routes
 app.get('*', (req, res) => {
-    // Only serve static files, not frontend routes
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).send('API endpoint not found');
+    }
+    
+    // For static files, return 404 if not found
     if (req.path.includes('.')) {
         return res.status(404).send('File not found');
     }
+    
+    // For all other routes (SPA routing), serve index.html
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
