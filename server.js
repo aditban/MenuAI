@@ -21,7 +21,9 @@ const openai = new OpenAI({
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8080', 'file://'],
+    origin: process.env.NODE_ENV === 'production' 
+        ? true  // Allow all origins in production
+        : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:8080', 'file://'],
     credentials: true
 }));
 
