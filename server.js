@@ -30,7 +30,16 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Static files are now served directly by Vercel from /public directory
+// Serve static files with explicit routes and proper content types
+app.use(express.static(__dirname, {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.css')) {
+            res.set('Content-Type', 'text/css');
+        } else if (path.endsWith('.js')) {
+            res.set('Content-Type', 'application/javascript');
+        }
+    }
+}));
 
 // Configure multer for handling file uploads
 const upload = multer({
@@ -350,8 +359,52 @@ Focus on dishes that are clearly visible and readable. If text is in another lan
     }
 }
 
-// All static files and HTML pages are served directly by Vercel from /public
-// Only API routes are handled by this Node.js function
+// Explicit routes for main pages
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/results.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'results.html'));
+});
+
+// Explicit routes for critical CSS files (with proper content type)
+app.get('/styles.css', (req, res) => {
+    res.set('Content-Type', 'text/css');
+    res.sendFile(path.join(__dirname, 'styles.css'));
+});
+
+app.get('/results-styles.css', (req, res) => {
+    res.set('Content-Type', 'text/css');
+    res.sendFile(path.join(__dirname, 'results-styles.css'));
+});
+
+// Explicit routes for critical image files
+app.get('/*.png', (req, res) => {
+    const filename = req.params[0] + '.png';
+    res.sendFile(path.join(__dirname, filename));
+});
+
+app.get('/*.svg', (req, res) => {
+    const filename = req.params[0] + '.svg';
+    res.sendFile(path.join(__dirname, filename));
+});
+
+app.get('/*.gif', (req, res) => {
+    const filename = req.params[0] + '.gif';
+    res.sendFile(path.join(__dirname, filename));
+});
+
+// Fallback for SPA routing
+app.get('*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
+        return res.status(404).send('API endpoint not found');
+    }
+    
+    // For all other routes, serve index.html (SPA behavior)
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Error handling middleware
 app.use((error, req, res, next) => {
