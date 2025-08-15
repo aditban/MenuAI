@@ -30,18 +30,7 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Serve static files with proper configuration
-app.use(express.static(__dirname, {
-    maxAge: '1d', // Cache for 1 day
-    setHeaders: (res, filePath) => {
-        // Set proper content types
-        if (filePath.endsWith('.css')) {
-            res.setHeader('Content-Type', 'text/css');
-        } else if (filePath.endsWith('.js')) {
-            res.setHeader('Content-Type', 'application/javascript');
-        }
-    }
-}));
+// Static files are handled directly by Vercel, not by Express
 
 // Configure multer for handling file uploads
 const upload = multer({
@@ -361,29 +350,15 @@ Focus on dishes that are clearly visible and readable. If text is in another lan
     }
 }
 
-// Serve main pages explicitly
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.get('/index.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.get('/results.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'results.html'));
-});
-
-// Fallback route for any other frontend routes
+// Fallback for any unmatched routes (should be minimal since Vercel handles most routing)
 app.get('*', (req, res) => {
     // Skip API routes
     if (req.path.startsWith('/api/')) {
         return res.status(404).send('API endpoint not found');
     }
     
-    // For all other routes (SPA routing), serve index.html
-    // Let express.static handle static files before this route
-    res.sendFile(path.join(__dirname, 'index.html'));
+    // For any other unmatched routes, return 404
+    res.status(404).send('Page not found');
 });
 
 // Error handling middleware
