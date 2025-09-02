@@ -444,6 +444,10 @@ body {
     border-radius: 8px;
 }
 
+.speak-button {
+    opacity: 0;
+}
+
 .camera-button:hover, .speak-button:hover {
     transform: scale(1.1);
     opacity: 0.8;
