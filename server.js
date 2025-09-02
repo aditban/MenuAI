@@ -373,6 +373,61 @@ app.get('/results.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'results.html'));
 });
 
+// Infer possible allergens for dishes
+app.post('/api/allergens', async (req, res) => {
+    try {
+        const { items } = req.body || {};
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ error: 'items must be a non-empty array of {name, description}' });
+        }
+
+        const normalized = items.map((it) => ({
+            name: String(it?.name || '').trim(),
+            description: String(it?.description || '').trim()
+        })).filter((it) => it.name);
+
+        const listText = normalized.map((it, i) => {
+            return `${i + 1}. Name: ${it.name}\n   Description: ${it.description}`;
+        }).join('\n');
+
+        const prompt = `For each dish below, infer likely food allergens based on the name and description. Focus on common allergens (e.g., milk/dairy, eggs, wheat/gluten, soy, peanuts, tree nuts, fish, shellfish, sesame, mustard). Return ONLY valid JSON mapping dish name to a concise comma-separated string of allergens. Keep it short, use plain words, no extra commentary.\n\n${listText}`;
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+                { role: 'user', content: prompt }
+            ],
+            temperature: 0.2,
+            max_tokens: 800
+        });
+
+        let content = response.choices?.[0]?.message?.content?.trim() || '{}';
+        if (content.startsWith('```json')) {
+            content = content.replace(/```json\s*/, '').replace(/\s*```$/, '');
+        } else if (content.startsWith('```')) {
+            content = content.replace(/```\s*/, '').replace(/\s*```$/, '');
+        }
+
+        let allergensByName = {};
+        try {
+            allergensByName = JSON.parse(content);
+        } catch (e) {
+            allergensByName = {};
+        }
+
+        const result = {};
+        normalized.forEach((it) => {
+            const v = String(allergensByName[it.name] || '').trim();
+            result[it.name] = v || '';
+        });
+
+        res.json({ allergens: result });
+    } catch (error) {
+        console.error('Error in /api/allergens:', error);
+        res.status(500).json({ error: 'Failed to infer allergens', details: error.message });
+    }
+});
+
 // Get pronunciations for a list of dish names
 app.post('/api/pronunciations', async (req, res) => {
     try {

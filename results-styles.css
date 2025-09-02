@@ -467,6 +467,10 @@ body {
     margin: 0 20px 14px 20px;
 }
 
+.divider.dotted {
+    background: repeating-linear-gradient(to right, #f3dacd 0 6px, rgba(0,0,0,0) 6px 10px);
+}
+
 /* Dish description */
 .dish-description {
     font-family: 'Ropa Sans', sans-serif;
@@ -500,6 +504,25 @@ body {
 
 .pronun-text {
     display: inline-block;
+}
+
+/* Allergens row */
+.allergens-row {
+    font-family: 'Ropa Sans', sans-serif;
+    font-size: 16px;
+    color: #767676;
+    line-height: 20px;
+    padding: 0 20px;
+    margin: 0 0 14px 0;
+}
+
+.allergens-label {
+    color: #3d3d3d;
+    margin-right: 4px;
+}
+
+.allergens-text {
+    color: #767676;
 }
 
 
