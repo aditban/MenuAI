@@ -373,65 +373,6 @@ app.get('/results.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'results.html'));
 });
 
-// Get pronunciations for a list of dish names
-app.post('/api/pronunciations', async (req, res) => {
-    try {
-        const { names } = req.body || {};
-        if (!Array.isArray(names) || names.length === 0) {
-            return res.status(400).json({ error: 'names must be a non-empty array' });
-        }
-
-        // Deduplicate while preserving order
-        const seen = new Set();
-        const uniqueNames = names.filter((n) => {
-            const key = String(n || '').trim();
-            if (!key || seen.has(key)) return false;
-            seen.add(key);
-            return true;
-        });
-
-        const prompt = `For each dish name below, return a simple, human-friendly pronunciation using plain English letters (not IPA). Use hyphens to break syllables only if helpful. Keep it concise and without any extra words. Return ONLY valid JSON object mapping each original dish name to its pronunciation string. Example: {"Bruschetta":"broo-SKEH-tuh"}.
-
-Dish names:\n${uniqueNames.map((n, i) => `${i + 1}. ${n}`).join('\n')}`;
-
-        const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.2,
-            max_tokens: 500
-        });
-
-        let content = response.choices?.[0]?.message?.content?.trim() || '{}';
-        if (content.startsWith('```json')) {
-            content = content.replace(/```json\s*/, '').replace(/\s*```$/, '');
-        } else if (content.startsWith('```')) {
-            content = content.replace(/```\s*/, '').replace(/\s*```$/, '');
-        }
-
-        let pronunciations = {};
-        try {
-            pronunciations = JSON.parse(content);
-        } catch (e) {
-            // Fall back to empty mapping on parse error
-            pronunciations = {};
-        }
-
-        // Ensure every requested name has some value
-        const filled = {};
-        uniqueNames.forEach((name) => {
-            const value = String(pronunciations[name] || '').trim();
-            filled[name] = value || name; // fallback to original name if missing
-        });
-
-        res.json({ pronunciations: filled });
-    } catch (error) {
-        console.error('Error in /api/pronunciations:', error);
-        res.status(500).json({ error: 'Failed to fetch pronunciations', details: error.message });
-    }
-});
-
 // Explicit routes for critical CSS files (with proper content type)
 app.get('/styles.css', (req, res) => {
     res.set('Content-Type', 'text/css');

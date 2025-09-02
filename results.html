@@ -119,33 +119,9 @@
                 
                 const data = await response.json();
                 const dishes = data.dishes || [];
-
-                // Fetch pronunciations for unique dish names and enrich results
-                let pronunciations = {};
-                try {
-                    const uniqueNames = Array.from(new Set(dishes.map(d => d && d.original_name).filter(Boolean)));
-                    if (uniqueNames.length > 0) {
-                        const pResp = await fetch('/api/pronunciations', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ names: uniqueNames })
-                        });
-                        if (pResp.ok) {
-                            const pData = await pResp.json();
-                            pronunciations = pData.pronunciations || {};
-                        }
-                    }
-                } catch (e) {
-                    pronunciations = {};
-                }
-
-                const enriched = dishes.map(d => ({
-                    ...d,
-                    pronunciation: pronunciations[d.original_name] || d.original_name
-                }));
                 
                 hideLoading();
-                displayResults(enriched);
+                displayResults(dishes);
                 
             } catch (error) {
                 console.error('Error processing images:', error);
@@ -244,8 +220,6 @@
                         </button>
                     </div>
                 </div>
-                <div class="divider"></div>
-                <div class="pronunciation-row">"${(dish.pronunciation || '').replace(/\\"/g, '\\"')}"</div>
                 <div class="divider"></div>
                 <p class="dish-description">${dish.simple_description}</p>
                 <div class="divider"></div>
