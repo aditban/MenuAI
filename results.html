@@ -122,6 +122,22 @@
                 
                 hideLoading();
                 displayResults(dishes);
+
+                // Background pronunciations fetch
+                try {
+                    const names = Array.from(new Set(dishes.map(d => d && d.original_name).filter(Boolean)));
+                    if (names.length > 0) {
+                        const pResp = await fetch('/api/pronunciations', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ names })
+                        });
+                        if (pResp.ok) {
+                            const pdata = await pResp.json();
+                            updatePronunciations(pdata.pronunciations || {});
+                        }
+                    }
+                } catch (e) {}
                 
             } catch (error) {
                 console.error('Error processing images:', error);
@@ -208,18 +224,21 @@
             const card = document.createElement('div');
             card.className = 'dish-card';
             
+                        const key = (dish.original_name || '').toLowerCase().replace(/[^a-z0-9]+/g,'-');
                         card.innerHTML = `
                 <div class="dish-header">
                     <h3 class="dish-name">${dish.original_name}</h3>
                     <div class="action-buttons">
-                        <button class="speak-button" onclick="searchPronunciation('${dish.original_name.replace(/'/g, '\\\'')}')" title="How to pronounce">
+                        <button class="speak-button" onclick="searchPronunciation('${dish.original_name.replace(/'/g, '\\'')}')" title="How to pronounce">
                             <img src="SPEAK.png" alt="Speak" class="speak-icon">
                         </button>
-                        <button class="camera-button" onclick="searchGoogleImages('${dish.original_name.replace(/'/g, '\\\'')}')" title="Search on Google Images">
+                        <button class="camera-button" onclick="searchGoogleImages('${dish.original_name.replace(/'/g, '\\'')}')" title="Search on Google Images">
                             <img src="Camera-button.png" alt="Camera" class="camera-icon">
                         </button>
                     </div>
                 </div>
+                <div class="divider"></div>
+                <div class="pronunciation-row">"<span class="pronunciation-text" data-pronun-for="${key}">${(dish.original_name || '')}</span>"</div>
                 <div class="divider"></div>
                 <p class="dish-description">${dish.simple_description}</p>
                 <div class="divider"></div>
@@ -246,6 +265,16 @@
             `;
             
             return card;
+        }
+
+        function updatePronunciations(map) {
+            Object.entries(map || {}).forEach(([name, value]) => {
+                const key = (name || '').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+                const el = document.querySelector(`.pronunciation-text[data-pronun-for="${key}"]`);
+                if (el) {
+                    el.textContent = String(value || name);
+                }
+            });
         }
         
         function showLoading() {
