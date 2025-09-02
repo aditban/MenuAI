@@ -93,14 +93,6 @@
             }
         }
 
-        // Helper: stable key for mapping dish names to DOM nodes
-        function keyForName(name) {
-            return String(name || '')
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-')
-                .replace(/^-+|-+$/g, '');
-        }
-
         if (selectedImages.length === 0) {
             // No images, redirect back
             window.location.href = 'index.html';
@@ -139,40 +131,51 @@
                 const data = await response.json();
                 const dishes = data.dishes || [];
 
-                // Render immediately with placeholders
-                displayResults(dishes.map(d => ({ ...d, pronunciation: d.original_name, allergens: '' })));
-
-                // Kick off enrichment in the background and update UI when it arrives
+                // Build inputs for enrichment
                 const uniqueNames = Array.from(new Set(dishes.map(d => d && d.original_name).filter(Boolean)));
                 const items = dishes.map(d => ({ name: d.original_name, description: d.simple_description }));
 
-                if (uniqueNames.length > 0) {
-                    fetchWithTimeout('/api/pronunciations', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ names: uniqueNames })
-                    }, 12000)
-                        .then(r => r && r.ok ? r.json() : null)
-                        .then(pData => {
-                            if (!pData || !pData.pronunciations) return;
-                            updatePronunciations(pData.pronunciations);
-                        })
-                        .catch(() => {});
-                }
+                // Fetch pronunciations and allergens in parallel with timeouts; fail-open
+                const [pResult, aResult] = await Promise.allSettled([
+                    uniqueNames.length > 0
+                        ? fetchWithTimeout('/api/pronunciations', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ names: uniqueNames })
+                          }, 12000)
+                        : Promise.resolve(null),
+                    items.length > 0
+                        ? fetchWithTimeout('/api/allergens', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ items })
+                          }, 12000)
+                        : Promise.resolve(null)
+                ]);
 
-                if (items.length > 0) {
-                    fetchWithTimeout('/api/allergens', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ items })
-                    }, 12000)
-                        .then(r => r && r.ok ? r.json() : null)
-                        .then(aData => {
-                            if (!aData || !aData.allergens) return;
-                            updateAllergens(aData.allergens);
-                        })
-                        .catch(() => {});
-                }
+                let pronunciations = {};
+                try {
+                    if (pResult.status === 'fulfilled' && pResult.value && pResult.value.ok) {
+                        const pData = await pResult.value.json();
+                        pronunciations = pData.pronunciations || {};
+                    }
+                } catch (_) { pronunciations = {}; }
+
+                let allergensByName = {};
+                try {
+                    if (aResult.status === 'fulfilled' && aResult.value && aResult.value.ok) {
+                        const aData = await aResult.value.json();
+                        allergensByName = aData.allergens || {};
+                    }
+                } catch (_) { allergensByName = {}; }
+
+                const finalData = dishes.map(d => ({
+                    ...d,
+                    pronunciation: pronunciations[d.original_name] || d.original_name,
+                    allergens: allergensByName[d.original_name] || ''
+                }));
+                
+                displayResults(finalData);
                 
             } catch (error) {
                 console.error('Error processing images:', error);
@@ -266,7 +269,6 @@
             const card = document.createElement('div');
             card.className = 'dish-card';
             
-                        const key = keyForName(dish.original_name);
                         card.innerHTML = `
                 <div class="dish-header">
                     <h3 class="dish-name">${dish.original_name}</h3>
@@ -277,11 +279,11 @@
                     </div>
                 </div>
                 <div class="divider"></div>
-                <div class="pronunciation-row"><img src="pronun-icon.svg" alt="Pronunciation" class="pronun-icon"><span class="pronun-text" data-pronun-for="${key}">"${(dish.pronunciation || '').replace(/\\"/g, '\\"')}"</span></div>
+                <div class="pronunciation-row"><img src="pronun-icon.svg" alt="Pronunciation" class="pronun-icon"><span class="pronun-text">"${(dish.pronunciation || '').replace(/\\"/g, '\\"')}"</span></div>
                 <div class="divider dotted"></div>
                 <p class="dish-description">${dish.simple_description}</p>
                 <div class="divider dotted"></div>
-                <div class="allergens-row"><span class="allergens-label">Allergens:</span> May include <span class="allergens-text" data-allergens-for="${key}">"${(dish.allergens || '').replace(/\\"/g, '\\"')}"</span></div>
+                <div class="allergens-row"><span class="allergens-label">Allergens:</span> May include <span class="allergens-text">"${(dish.allergens || '').replace(/\\"/g, '\\"')}"</span></div>
                 <div class="divider"></div>
                 <div class="nutrition-tags">
                     <div class="nutrition-tag">
@@ -306,22 +308,6 @@
             `;
             
             return card;
-        }
-
-        function updatePronunciations(map) {
-            Object.entries(map || {}).forEach(([name, value]) => {
-                const key = keyForName(name);
-                const el = document.querySelector(`.pronun-text[data-pronun-for="${key}"]`);
-                if (el) el.textContent = `"${String(value || '').replace(/"/g, '"')}"`;
-            });
-        }
-
-        function updateAllergens(map) {
-            Object.entries(map || {}).forEach(([name, value]) => {
-                const key = keyForName(name);
-                const el = document.querySelector(`.allergens-text[data-allergens-for="${key}"]`);
-                if (el) el.textContent = `"${String(value || '').replace(/"/g, '"')}"`;
-            });
         }
         
         function showLoading() {
