@@ -212,7 +212,10 @@
                 <div class="dish-header">
                     <h3 class="dish-name">${dish.original_name}</h3>
                     <div class="action-buttons">
-                        <button class="camera-button" onclick="searchGoogleImages('${dish.original_name.replace(/'/g, '\\'')}')" title="Search on Google Images">
+                        <button class="speak-button" onclick="searchPronunciation('${dish.original_name.replace(/'/g, '\\\'')}')" title="How to pronounce">
+                            <img src="SPEAK.png" alt="Speak" class="speak-icon">
+                        </button>
+                        <button class="camera-button" onclick="searchGoogleImages('${dish.original_name.replace(/'/g, '\\\'')}')" title="Search on Google Images">
                             <img src="Camera-button.png" alt="Camera" class="camera-icon">
                         </button>
                     </div>
