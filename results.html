@@ -247,10 +247,10 @@
                 </div>
                 <div class="divider"></div>
                 <div class="pronunciation-row"><img src="pronun-icon.svg" alt="Pronunciation" class="pronun-icon">"${dish.pronunciation || dish.original_name}"</div>
-                <div class="divider"></div>
+                <div class="divider dotted-divider"></div>
                 <p class="dish-description">${dish.simple_description}</p>
-                <div class="divider"></div>
-                ${dish.allergens && String(dish.allergens).trim() !== '' ? "<div class=\"allergens-row\"><span class=\"allergens-label\">Allergens:</span> May include " + String(dish.allergens).trim() + "</div><div class=\"divider\"></div>" : ""}
+                <div class="divider dotted-divider"></div>
+                ${dish.allergens && String(dish.allergens).trim() !== '' && String(dish.allergens).trim().toLowerCase() !== 'none' ? "<div class=\"allergens-row\"><span class=\"allergens-label\">Allergens:</span> May include " + String(dish.allergens).trim() + "</div><div class=\"divider\"></div>" : ""}
                 <div class="nutrition-tags">
                     <div class="nutrition-tag">
                         <div class="nutrition-icon">

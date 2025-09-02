@@ -467,6 +467,14 @@ body {
     margin: 0 20px 14px 20px;
 }
 
+/* Dotted variant for specific dividers */
+.divider.dotted-divider {
+    background: transparent;
+    border-top: 2px dotted #f3dacd;
+    height: 0;
+    margin: 0 20px 14px 20px;
+}
+
 /* Dish description */
 .dish-description {
     font-family: 'Ropa Sans', sans-serif;
@@ -497,6 +505,26 @@ body {
     object-fit: contain;
 }
 
+/* Allergens row */
+.allergens-row {
+    font-family: 'Ropa Sans', sans-serif;
+    font-size: 16px;
+    color: #767676;
+    line-height: 20px;
+    padding: 0 20px;
+    margin: 0 0 14px 0;
+}
+
+.allergens-label {
+    color: #767676; /* Match body text color */
+    font-weight: normal;
+    margin-right: 4px;
+}
+
+/* Hide pronunciation button visually but keep in layout for spacing */
+.speak-button {
+    opacity: 0;
+}
 
 
 /* Nutrition tags */
