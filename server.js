@@ -173,7 +173,12 @@ app.post('/api/analyze-menu', async (req, res) => {
             
             try {
                 const dishes = await extractDishesFromImage(imageData);
-                allDishes.push(...dishes);
+                // Attach page number (starting at 1) to each dish so UI can show page badges
+                const dishesWithPage = (Array.isArray(dishes) ? dishes : []).map(d => ({
+                    ...d,
+                    page: i + 1
+                }));
+                allDishes.push(...dishesWithPage);
                 console.log(`Found ${dishes.length} dishes in image ${i + 1}`);
             } catch (error) {
                 console.error(`Error processing image ${i + 1}:`, error.message);
@@ -185,6 +190,20 @@ app.post('/api/analyze-menu', async (req, res) => {
             return res.status(422).json({ 
                 error: 'No dishes could be extracted from the provided images. Please ensure the images contain readable menu text.' 
             });
+        }
+
+        // Enrich dishes with pronunciations (single call for all unique names)
+        try {
+            const uniqueNames = Array.from(new Set(allDishes.map(d => d && d.original_name).filter(Boolean)));
+            let pronunciations = {};
+            if (uniqueNames.length > 0) {
+                pronunciations = await getPronunciationsForNames(uniqueNames);
+            }
+            allDishes.forEach(d => {
+                d.pronunciation = pronunciations[d.original_name] || d.original_name;
+            });
+        } catch (e) {
+            console.warn('Pronunciation enrichment failed, proceeding without it:', e.message);
         }
 
         console.log(`Successfully extracted ${allDishes.length} total dishes`);
@@ -356,6 +375,39 @@ Focus on dishes that are clearly visible and readable. If text is in another lan
     } catch (error) {
         console.error('OpenAI API error:', error.message);
         throw new Error(`OpenAI processing failed: ${error.message}`);
+    }
+}
+
+// Helper: get pronunciations for dish names in one request
+async function getPronunciationsForNames(names) {
+    try {
+        const prompt = `For each dish name below, provide a simple pronunciation using plain English letters (not IPA). Keep it concise. Return ONLY a JSON object mapping the exact original dish name to its pronunciation string.\n\n${names.map((n,i)=>`${i+1}. ${n}`).join('\n')}`;
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.2,
+            max_tokens: 600
+        });
+
+        let content = response.choices?.[0]?.message?.content?.trim() || '{}';
+        if (content.startsWith('```json')) {
+            content = content.replace(/```json\s*/, '').replace(/\s*```$/, '');
+        } else if (content.startsWith('```')) {
+            content = content.replace(/```\s*/, '').replace(/\s*```$/, '');
+        }
+
+        let map = {};
+        try { map = JSON.parse(content); } catch { map = {}; }
+
+        const filled = {};
+        names.forEach(n => { filled[n] = String(map[n] || n); });
+        return filled;
+    } catch (error) {
+        console.error('Error generating pronunciations:', error.message);
+        const fallback = {};
+        names.forEach(n => { fallback[n] = n; });
+        return fallback;
     }
 }
 

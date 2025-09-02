@@ -1,62 +1,136 @@
-# 🍽️ Dishlingo Android App
+# MenuAI - Restaurant Menu Decoder
 
-A native Android application that provides a seamless mobile experience for Dishlingo - your AI-powered restaurant menu decoder.
+A web application that uses OpenAI Vision API to decode complex restaurant menu dishes into simple English descriptions.
 
-## ✨ Features
+## Features
 
-- **🌐 WebView Integration** - Runs your Dishlingo web app natively
-- **📱 Native Android Experience** - Full-screen, responsive design
-- **📷 Camera Integration** - Direct access to device camera for menu photos
-- **🖼️ Gallery Access** - Select existing menu images from device
-- **🔒 Permission Management** - Proper handling of camera and storage permissions
-- **⚡ Performance Optimized** - Fast loading and smooth navigation
-- **🎨 Modern UI** - Material Design 3 with Dishlingo branding
+- 📸 **Image Upload**: Upload up to 5 restaurant menu photos
+- 🤖 **AI-Powered Analysis**: Uses OpenAI's vision capabilities to extract dish information
+- 🌍 **Multi-Language Support**: Translates dishes from any language to English
+- 📊 **Nutritional Insights**: Estimates calories, sugar, fat, and greens content
+- 📱 **Responsive Design**: Works perfectly on mobile and desktop
+- 🎨 **Beautiful UI**: Clean, modern interface designed in Figma
 
-## 🚀 Quick Start
+## How It Works
 
-### Prerequisites
+1. **Upload Menu Photos** - Click the menu interface to select restaurant menu images
+2. **AI Processing** - OpenAI analyzes each image to extract dish names
+3. **Simple Descriptions** - Get 20-word maximum descriptions with main ingredients
+4. **Nutritional Analysis** - See estimated nutritional content for each dish
 
-- **Android Studio** (latest version)
-- **Android SDK** (API 24+)
-- **Java 8** or higher
-- **Your Dishlingo Vercel URL**
+## Backend Implementation ✅
 
-### Setup Steps
+### 🚀 Production-Ready Solution
 
-1. **Clone/Download** this project
-2. **Open in Android Studio**
-3. **Update URL** in `MainActivity.java`:
-   ```java
-   private static final String DISHLINGO_URL = "https://your-actual-dishlingo.vercel.app";
-   ```
-4. **Sync Gradle** and build the project
-5. **Run on device/emulator**
+This application now includes a complete Node.js backend that handles OpenAI API calls, solving all CORS issues and providing a production-ready solution.
 
-## 📱 Building & Deployment
+### Quick Start
 
-### Debug Build
+**Option 1: Easy Setup (Recommended)**
 ```bash
-./gradlew assembleDebug
+# Make the startup script executable
+chmod +x start.sh
+
+# Run the complete setup and server
+./start.sh
 ```
 
-### Release Build
+**Option 2: Manual Setup**
 ```bash
-./gradlew assembleRelease
+# Install dependencies
+npm install
+
+# Start the backend server
+npm start
 ```
 
-### APK Location
-Generated APK will be in:
+The server will start on `http://localhost:3000` and serve both the API and frontend.
+
+## Files Structure
+
+### Frontend
+- `index.html` - Main upload interface
+- `results.html` - Results display page
+- `styles.css` - Styling for main interface
+- `results-styles.css` - Styling for results page
+- `demo.html` - Demo page redirector
+
+### Backend
+- `server.js` - Express server with OpenAI integration
+- `package.json` - Node.js dependencies and scripts
+- `start.sh` - Easy setup and startup script
+- `env.example` - Environment variables template
+
+### Backend API Endpoints
+
+- `GET /api/health` - Server health check
+- `POST /api/analyze-menu` - Process menu images with OpenAI
+- `GET /*` - Serve frontend static files
+
+## OpenAI Integration
+
+The system uses the following prompt to analyze menu images:
+
 ```
-app/build/outputs/apk/release/app-release.apk
+Analyze this restaurant menu image and extract all dish names. For each dish, provide:
+1. The original dish name (as it appears in the menu)
+2. A simple English description (maximum 20 words) explaining what the dish is and its main ingredients
+3. Estimate nutritional information (High/Medium/Low for: Calories, Sugar, Fat, Greens)
+
+Format your response as a JSON array...
 ```
 
-## 🔧 Requirements
+## Testing
 
-- **Minimum SDK**: API 24 (Android 7.0)
-- **Target SDK**: API 34 (Android 14)
-- **Compile SDK**: API 34
-- **Java Version**: 8+
+### 1. Test Backend Server
+```bash
+# Start the server
+npm start
 
----
+# Test health endpoint
+curl http://localhost:3000/api/health
 
-**Made with ❤️ for Dishlingo** 
+# Test OpenAI integration
+curl http://localhost:3000/api/test-openai
+```
+
+### 2. Test Full Application
+```bash
+# Open the frontend
+open http://localhost:3000/index.html
+
+# Or visit in browser:
+# http://localhost:3000
+```
+
+### 3. Demo Mode (No Backend Required)
+```bash
+# View demo with sample data
+open demo.html
+# Or visit: http://localhost:3000/demo.html
+```
+
+### How to Test Menu Processing
+1. Start backend server (`npm start`)
+2. Open `http://localhost:3000` in browser
+3. Click menu image to upload restaurant menu photos
+4. Click "Proceed" - images will be sent to backend
+5. Backend processes images with OpenAI Vision API
+6. View decoded dishes with descriptions and nutrition info
+
+## Production Deployment
+
+For production use, implement a backend API that:
+1. Receives uploaded images from frontend
+2. Processes images with OpenAI Vision API
+3. Returns structured results to frontend
+4. Handles error cases and rate limiting
+
+## Design Credits
+
+UI/UX designed in Figma with:
+- Clean, modern interface
+- Responsive mobile-first design  
+- Beautiful gradient backgrounds
+- Intuitive user flow
+- Professional typography (Instrument Serif, Ropa Sans) 
