@@ -192,6 +192,13 @@ app.post('/api/analyze-menu', async (req, res) => {
             });
         }
 
+        // If client requests base-only response, skip enrichment for progressive UI
+        const skip = Boolean(req.body && (req.body.skip_enrichment === true || req.body.skip_enrichment === 'true'));
+        if (skip) {
+            console.log('Skipping enrichment by client request; returning base dishes only');
+            return res.json({ dishes: allDishes });
+        }
+
         // Enrich dishes with pronunciations and allergens in one pass
         try {
             const uniqueNames = Array.from(new Set(allDishes.map(d => d && d.original_name).filter(Boolean)));
@@ -221,6 +228,36 @@ app.post('/api/analyze-menu', async (req, res) => {
             error: 'Internal server error while processing menu images.',
             details: error.message 
         });
+    }
+});
+
+// Progressive enrichment endpoints
+app.post('/api/pronunciations', async (req, res) => {
+    try {
+        const { names } = req.body || {};
+        const list = Array.isArray(names) ? names.filter(Boolean) : [];
+        if (list.length === 0) return res.json({ pronunciations: {} });
+        const map = await getPronunciationsForNames(list).catch(() => ({}));
+        return res.json({ pronunciations: map || {} });
+    } catch (error) {
+        console.error('Error in /api/pronunciations:', error);
+        return res.status(500).json({ error: 'Failed to get pronunciations', details: error.message });
+    }
+});
+
+app.post('/api/allergens', async (req, res) => {
+    try {
+        const { items } = req.body || {};
+        const list = Array.isArray(items) ? items.map(it => ({
+            name: String(it && it.name || '').trim(),
+            description: String(it && it.description || '').trim()
+        })).filter(it => it.name) : [];
+        if (list.length === 0) return res.json({ allergens: {} });
+        const map = await getAllergensForItems(list).catch(() => ({}));
+        return res.json({ allergens: map || {} });
+    } catch (error) {
+        console.error('Error in /api/allergens:', error);
+        return res.status(500).json({ error: 'Failed to infer allergens', details: error.message });
     }
 });
 
