@@ -467,10 +467,6 @@ body {
     margin: 0 20px 14px 20px;
 }
 
-.divider.dotted {
-    background: repeating-linear-gradient(to right, #f3dacd 0 6px, rgba(0,0,0,0) 6px 10px);
-}
-
 /* Dish description */
 .dish-description {
     font-family: 'Ropa Sans', sans-serif;
