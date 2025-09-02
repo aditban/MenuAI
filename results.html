@@ -230,7 +230,7 @@
                 <div class="divider"></div>
                 <p class="dish-description">${dish.simple_description}</p>
                 <div class="divider"></div>
-                ${dish.allergens && String(dish.allergens).trim() !== '' ? `<div class=\"allergens-row\"><span class=\"allergens-label\">Allergens:</span> May include ${String(dish.allergens).trim()}</div><div class=\"divider\"></div>` : ''}
+                ${dish.allergens && String(dish.allergens).trim() !== '' ? "<div class=\"allergens-row\"><span class=\"allergens-label\">Allergens:</span> May include " + String(dish.allergens).trim() + "</div><div class=\"divider\"></div>" : ""}
                 <div class="nutrition-tags">
                     <div class="nutrition-tag">
                         <div class="nutrition-icon">
