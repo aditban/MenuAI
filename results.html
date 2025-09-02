@@ -105,8 +105,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        images: images,
-                        skip_enrichment: true
+                        images: images
                     })
                 });
                 console.log('[Results] fetch returned', { ok: response.ok, status: response.status });
@@ -138,7 +137,6 @@
                     console.log('[Results] displayResults:begin');
                     displayResults(dishes);
                     console.log('[Results] displayResults:end');
-                    progressiveEnrich(dishes).catch(e => console.warn('[Results] progressiveEnrich failed', e));
                 } catch (renderErr) {
                     console.error('[Results] displayResults failed:', renderErr);
                     showError(renderErr.message || 'Failed to render results');
@@ -286,42 +284,6 @@
             return card;
         }
 
-        async function progressiveEnrich(dishes) {
-            try {
-                const names = Array.from(new Set((dishes || []).map(d => d && d.original_name).filter(Boolean)));
-                const items = (dishes || []).map(d => ({ name: d.original_name, description: d.simple_description }));
-                const [pRes, aRes] = await Promise.all([
-                    fetch('/api/pronunciations', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ names })
-                    }).then(r => r.ok ? r.json() : Promise.reject(new Error('pronunciations failed ' + r.status))).catch(() => ({ pronunciations: {} })),
-                    fetch('/api/allergens', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ items })
-                    }).then(r => r.ok ? r.json() : Promise.reject(new Error('allergens failed ' + r.status))).catch(() => ({ allergens: {} }))
-                ]);
-                const pronunciations = (pRes && pRes.pronunciations) || {};
-                const allergens = (aRes && aRes.allergens) || {};
-
-                Object.keys(pronunciations).forEach(name => {
-                    const key = encodeURIComponent(name);
-                    const nodes = document.querySelectorAll(`.pronunciation-text[data-name="${key}"]`);
-                    nodes.forEach(node => { node.textContent = `"${pronunciations[name]}"`; });
-                });
-
-                Object.keys(allergens).forEach(name => {
-                    const val = String(allergens[name] || '').trim();
-                    if (!val || val.toLowerCase() === 'none') return;
-                    const key = encodeURIComponent(name);
-                    const hook = document.querySelector(`.allergens-hook[data-name="${key}"]`);
-                    if (hook && hook.innerHTML.trim() === '') {
-                        hook.innerHTML = `<div class="allergens-row"><span class="allergens-label">Allergens:</span> May include ${val}</div><div class="divider"></div>`;
-                    }
-                });
-            } catch (e) {
-                console.warn('[Results] progressiveEnrich error', e);
-            }
-        }
         
         function showLoading() {
             try { console.log('[Results] showLoading'); } catch (e) {}
