@@ -373,6 +373,42 @@ app.get('/results.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'results.html'));
 });
 
+// Minimal endpoint: return simple, human-friendly pronunciations for dish names
+app.post('/api/pronunciations', async (req, res) => {
+    try {
+        const { names } = req.body || {};
+        if (!Array.isArray(names) || names.length === 0) {
+            return res.status(400).json({ error: 'names must be a non-empty array' });
+        }
+
+        const unique = Array.from(new Set(names.map(n => String(n || '').trim()).filter(Boolean)));
+        const prompt = `For each dish name, give a simple pronunciation using plain English letters (not IPA). Keep it short. Return ONLY JSON object mapping the original dish name to its pronunciation.\n\n${unique.map((n,i)=>`${i+1}. ${n}`).join('\n')}`;
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.2,
+            max_tokens: 400
+        });
+
+        let content = response.choices?.[0]?.message?.content?.trim() || '{}';
+        if (content.startsWith('```json')) {
+            content = content.replace(/```json\s*/, '').replace(/\s*```$/, '');
+        } else if (content.startsWith('```')) {
+            content = content.replace(/```\s*/, '').replace(/\s*```$/, '');
+        }
+
+        let map = {};
+        try { map = JSON.parse(content); } catch { map = {}; }
+        const filled = {};
+        unique.forEach(n => { filled[n] = String(map[n] || n); });
+        res.json({ pronunciations: filled });
+    } catch (err) {
+        console.error('Pronunciations error:', err);
+        res.status(500).json({ error: 'Failed to fetch pronunciations' });
+    }
+});
+
 // Explicit routes for critical CSS files (with proper content type)
 app.get('/styles.css', (req, res) => {
     res.set('Content-Type', 'text/css');
