@@ -192,18 +192,24 @@ app.post('/api/analyze-menu', async (req, res) => {
             });
         }
 
-        // Enrich dishes with pronunciations (single call for all unique names)
+        // Enrich dishes with pronunciations and allergens in one pass
         try {
             const uniqueNames = Array.from(new Set(allDishes.map(d => d && d.original_name).filter(Boolean)));
             let pronunciations = {};
+            let allergens = {};
             if (uniqueNames.length > 0) {
-                pronunciations = await getPronunciationsForNames(uniqueNames);
+                [pronunciations, allergens] = await Promise.all([
+                    getPronunciationsForNames(uniqueNames).catch(() => ({})),
+                    getAllergensForItems(allDishes.map(d => ({ name: d.original_name, description: d.simple_description }))).catch(() => ({}))
+                ]);
             }
             allDishes.forEach(d => {
-                d.pronunciation = pronunciations[d.original_name] || d.original_name;
+                d.pronunciation = (pronunciations && pronunciations[d.original_name]) || d.original_name;
+                const a = allergens && allergens[d.original_name];
+                d.allergens = (typeof a === 'string' && a.trim().length > 0) ? a.trim() : '';
             });
         } catch (e) {
-            console.warn('Pronunciation enrichment failed, proceeding without it:', e.message);
+            console.warn('Enrichment failed, proceeding without it:', e.message);
         }
 
         console.log(`Successfully extracted ${allDishes.length} total dishes`);
@@ -408,6 +414,47 @@ async function getPronunciationsForNames(names) {
         const fallback = {};
         names.forEach(n => { fallback[n] = n; });
         return fallback;
+    }
+}
+
+// Infer likely allergens for a list of items (name + description)
+async function getAllergensForItems(items) {
+    try {
+        const normalized = (items || [])
+            .map(it => ({
+                name: String(it && it.name || '').trim(),
+                description: String(it && it.description || '').trim()
+            }))
+            .filter(it => it.name);
+
+        if (normalized.length === 0) return {};
+
+        const listText = normalized.map((it, i) => `${i + 1}. Name: ${it.name}\n   Description: ${it.description}`).join('\n');
+        const prompt = `For each dish below, list likely food allergens based on the name and description. Use common words (milk, egg, wheat/gluten, soy, peanut, tree nut, fish, shellfish, sesame, mustard, etc.). Keep it short, comma-separated. Return ONLY a JSON object mapping the exact dish name to its allergens string.\n\n${listText}`;
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.2,
+            max_tokens: 700
+        });
+
+        let content = response.choices?.[0]?.message?.content?.trim() || '{}';
+        if (content.startsWith('```json')) {
+            content = content.replace(/```json\s*/, '').replace(/\s*```$/, '');
+        } else if (content.startsWith('```')) {
+            content = content.replace(/```\s*/, '').replace(/\s*```$/, '');
+        }
+
+        let map = {};
+        try { map = JSON.parse(content); } catch { map = {}; }
+
+        const result = {};
+        normalized.forEach(it => { result[it.name] = String(map[it.name] || '').trim(); });
+        return result;
+    } catch (error) {
+        console.error('Error generating allergens:', error.message);
+        return {};
     }
 }
 
