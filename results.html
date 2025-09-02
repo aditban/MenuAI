@@ -138,12 +138,38 @@
             const container = document.getElementById('results-container');
             container.innerHTML = '';
             
-            dishes.forEach((dish, index) => {
+            // Ensure each dish has a page number; default to 1
+            const normalized = (Array.isArray(dishes) ? dishes : []).map(d => ({
+                ...d,
+                page: typeof d.page === 'number' ? d.page : 1
+            }));
+
+            // Maintain order but detect page changes
+            let currentPage = null;
+            normalized.forEach((dish, index) => {
+                if (dish.page !== currentPage) {
+                    // On page change, insert a page badge for page >= 2
+                    if (dish.page >= 2) {
+                        container.appendChild(createPageBadge(dish.page));
+                    }
+                    currentPage = dish.page;
+                }
+
                 const dishCard = createDishCard(dish, index);
                 container.appendChild(dishCard);
             });
             
             container.style.display = 'block';
+        }
+
+        function createPageBadge(pageNumber) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'page-badge-wrapper';
+            const badge = document.createElement('div');
+            badge.className = 'page-badge';
+            badge.innerHTML = `<span class="label">PAGE</span><span class="num">${pageNumber}</span>`;
+            wrapper.appendChild(badge);
+            return wrapper;
         }
         
 

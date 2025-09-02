@@ -173,7 +173,12 @@ app.post('/api/analyze-menu', async (req, res) => {
             
             try {
                 const dishes = await extractDishesFromImage(imageData);
-                allDishes.push(...dishes);
+                // Attach page number (starting at 1) to each dish so UI can show page badges
+                const dishesWithPage = (Array.isArray(dishes) ? dishes : []).map(d => ({
+                    ...d,
+                    page: i + 1
+                }));
+                allDishes.push(...dishesWithPage);
                 console.log(`Found ${dishes.length} dishes in image ${i + 1}`);
             } catch (error) {
                 console.error(`Error processing image ${i + 1}:`, error.message);

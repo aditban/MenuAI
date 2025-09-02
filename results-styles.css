@@ -353,6 +353,40 @@ body {
     margin-top: 0;
 }
 
+/* Page badge between pages */
+.page-badge-wrapper {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 6px 0 12px 0;
+}
+
+.page-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 21px;
+    padding: 0 12px;
+    border-radius: 10.5px;
+    background: linear-gradient(to right, #f6b29d, #eaa793);
+    color: #ffffff;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06) inset;
+}
+
+.page-badge .label {
+    font-family: 'Ropa Sans', sans-serif;
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.page-badge .num {
+    font-family: 'Ropa Sans', sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+}
+
 /* Dish cards */
 .dish-card {
     background: #fff2e8;
