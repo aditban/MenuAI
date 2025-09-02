@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Dishlingo</string>
+    <string name="app_description">Decode complex dish titles with AI</string>
+    <string name="permission_camera">Camera permission is required to take photos of menus</string>
+    <string name="permission_storage">Storage permission is required to select menu images</string>
+    <string name="permission_denied">Permissions are required for full functionality</string>
+</resources> 
