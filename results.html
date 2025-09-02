@@ -226,6 +226,16 @@
                 <path d="M3.80385 6C6.11325 2 7.26795 7.88735e-07 9 3.90482e-07C9 3.90482e-07 9 3.90482e-07 9 3.90482e-07C10.7321 8.54495e-07 11.8868 2 14.1962 6V6C16.5056 10 17.6603 12 16.7942 13.5C16.7942 13.5 16.7942 13.5 16.7942 13.5C15.9282 15 13.6188 15 9 15V15C4.3812 15 2.0718 15 1.20577 13.5C1.20577 13.5 1.20577 13.5 1.20577 13.5C0.339747 12 1.49445 10 3.80385 6V6Z" fill="${color}"/>
             </svg>`;
         }
+
+        function escapeHtml(text) {
+            if (text == null) return '';
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
         
         function createDishCard(dish, index) {
             const card = document.createElement('div');
@@ -237,7 +247,7 @@
                 <div class="dish-header">
                     <h3 class="dish-name">${dish.original_name}</h3>
                     <div class="action-buttons">
-                        <button class="camera-button" onclick="searchGoogleImages('${dish.original_name.replace(/'/g, '\\'')}')" title="Search on Google Images">
+                        <button class="camera-button" data-name="${escapeHtml(dish.original_name)}" onclick="searchGoogleImages(this.getAttribute('data-name'))" title="Search on Google Images">
                             <img src="Camera-button.png" alt="Camera" class="camera-icon">
                         </button>
                     </div>
