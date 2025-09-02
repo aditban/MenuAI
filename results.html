@@ -80,6 +80,7 @@
     <script>
         // Get images from localStorage
         const selectedImages = JSON.parse(localStorage.getItem('selectedImages') || '[]');
+        try { console.log('[Results] selectedImages count:', Array.isArray(selectedImages) ? selectedImages.length : 'N/A'); } catch (e) {}
         
         if (selectedImages.length === 0) {
             // No images, redirect back
@@ -93,9 +94,11 @@
         
         async function processMenuImages(images) {
             try {
+                console.log('[Results] processMenuImages:start', { imagesCount: Array.isArray(images) ? images.length : 'N/A' });
                 showLoading();
                 
                 // Call the backend API instead of OpenAI directly
+                console.time && console.time('[Results] /api/analyze-menu');
                 const response = await fetch('/api/analyze-menu', {
                     method: 'POST',
                     headers: {
@@ -105,12 +108,14 @@
                         images: images
                     })
                 });
+                console.log('[Results] fetch returned', { ok: response.ok, status: response.status });
                 
                 if (!response.ok) {
                     let message = `Server error: ${response.status}`;
                     try {
                         const errorData = await response.json();
                         if (errorData.error === 'NOT_MENU_IMAGES') {
+                            console.warn('[Results] NOT_MENU_IMAGES error from server');
                             hideLoading();
                             showNonMenuError();
                             return;
@@ -123,10 +128,19 @@
                 }
                 
                 const data = await response.json();
-                const dishes = data.dishes || [];
+                const dishes = (data && Array.isArray(data.dishes)) ? data.dishes : [];
+                console.timeEnd && console.timeEnd('[Results] /api/analyze-menu');
+                console.log('[Results] API success. dishes count:', dishes.length);
                 
                 hideLoading();
-                displayResults(dishes);
+                try {
+                    console.log('[Results] displayResults:begin');
+                    displayResults(dishes);
+                    console.log('[Results] displayResults:end');
+                } catch (renderErr) {
+                    console.error('[Results] displayResults failed:', renderErr);
+                    showError(renderErr.message || 'Failed to render results');
+                }
                 
             } catch (error) {
                 console.error('Error processing images:', error);
@@ -135,11 +149,13 @@
                     stack: error.stack
                 });
                 hideLoading();
+                console.log('[Results] showError due to catch');
                 showError(error.message);
             }
         }
         
         function displayResults(dishes) {
+            console.log('[Results] displayResults received', { dishesType: typeof dishes, count: Array.isArray(dishes) ? dishes.length : 'N/A' });
             const container = document.getElementById('results-container');
             container.innerHTML = '';
             
@@ -156,6 +172,7 @@
                     // On page change, insert a page badge for page >= 2
                     if (dish.page >= 2) {
                         container.appendChild(createPageBadge(dish.page));
+                        console.log('[Results] Inserted page badge for page', dish.page);
                     }
                     currentPage = dish.page;
                 }
@@ -165,6 +182,7 @@
             });
             
             container.style.display = 'block';
+            console.log('[Results] results-container displayed');
         }
 
         function createPageBadge(pageNumber) {
@@ -212,15 +230,17 @@
         function createDishCard(dish, index) {
             const card = document.createElement('div');
             card.className = 'dish-card';
+            const nutrition = (dish && dish.nutrition) ? dish.nutrition : {};
+            try { console.log('[Results] createDishCard', { index, name: dish && dish.original_name }); } catch (e) {}
             
                         card.innerHTML = `
                 <div class="dish-header">
                     <h3 class="dish-name">${dish.original_name}</h3>
                     <div class="action-buttons">
-                        <button class="speak-button" onclick="searchPronunciation('${dish.original_name.replace(/'/g, '\\'')}')" title="How to pronounce">
+                        <button class="speak-button" onclick="searchPronunciation('${dish.original_name.replace(/'/g, '\'')}')" title="How to pronounce">
                             <img src="SPEAK.png" alt="Speak" class="speak-icon">
                         </button>
-                        <button class="camera-button" onclick="searchGoogleImages('${dish.original_name.replace(/'/g, '\\'')}')" title="Search on Google Images">
+                        <button class="camera-button" onclick="searchGoogleImages('${dish.original_name.replace(/'/g, '\'')}')" title="Search on Google Images">
                             <img src="Camera-button.png" alt="Camera" class="camera-icon">
                         </button>
                     </div>
@@ -234,19 +254,19 @@
                 <div class="nutrition-tags">
                     <div class="nutrition-tag">
                         <div class="nutrition-icon">
-                            ${getNutritionIcon('calories', dish.nutrition.calories)}
+                            ${getNutritionIcon('calories', nutrition.calories)}
                         </div>
                         <span>Calories</span>
                     </div>
                     <div class="nutrition-tag">
                         <div class="nutrition-icon">
-                            ${getNutritionIcon('sugar', dish.nutrition.sugar)}
+                            ${getNutritionIcon('sugar', nutrition.sugar)}
                         </div>
                         <span>Sugar</span>
                     </div>
                     <div class="nutrition-tag">
                         <div class="nutrition-icon">
-                            ${getNutritionIcon('unhealthy_fat', dish.nutrition.unhealthy_fat || dish.nutrition.fat)}
+                            ${getNutritionIcon('unhealthy_fat', (nutrition.unhealthy_fat || nutrition.fat))}
                         </div>
                         <span>Unhealthy Fat</span>
                     </div>
@@ -257,16 +277,19 @@
         }
         
         function showLoading() {
+            try { console.log('[Results] showLoading'); } catch (e) {}
             document.getElementById('loading-container').style.display = 'block';
             document.getElementById('results-container').style.display = 'none';
             document.getElementById('error-container').style.display = 'none';
         }
         
         function hideLoading() {
+            try { console.log('[Results] hideLoading'); } catch (e) {}
             document.getElementById('loading-container').style.display = 'none';
         }
         
         function showError(errorMessage = '') {
+            try { console.log('[Results] showError', { errorMessage }); } catch (e) {}
             const errorContainer = document.getElementById('error-container');
             const errorText = errorContainer.querySelector('.error-text');
             if (errorText && errorMessage) {
@@ -282,6 +305,7 @@
         }
         
         function showNonMenuError() {
+            try { console.log('[Results] showNonMenuError'); } catch (e) {}
             const nonMenuErrorContainer = document.getElementById('non-menu-error-container');
             
             // Show non-menu error container and hide other containers
@@ -316,6 +340,15 @@
             window.location.href = 'index.html';
         }
 
+        // Global error logging to aid debugging
+        try {
+            window.addEventListener('error', function (e) {
+                console.error('[Results] window.onerror', e.error || e.message || e);
+            });
+            window.addEventListener('unhandledrejection', function (e) {
+                console.error('[Results] unhandledrejection', e.reason || e);
+            });
+        } catch (e) {}
 
     </script>
 </body>
