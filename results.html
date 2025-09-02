@@ -143,29 +143,9 @@
                     ...d,
                     pronunciation: pronunciations[d.original_name] || d.original_name
                 }));
-
-                // Fetch allergens for dishes
-                let allergensByName = {};
-                try {
-                    const items = enriched.map(d => ({ name: d.original_name, description: d.simple_description }));
-                    const aResp = await fetch('/api/allergens', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ items })
-                    });
-                    if (aResp.ok) {
-                        const aData = await aResp.json();
-                        allergensByName = aData.allergens || {};
-                    }
-                } catch (e) { allergensByName = {}; }
-
-                const finalData = enriched.map(d => ({
-                    ...d,
-                    allergens: allergensByName[d.original_name] || ''
-                }));
                 
                 hideLoading();
-                displayResults(finalData);
+                displayResults(enriched);
                 
             } catch (error) {
                 console.error('Error processing images:', error);
@@ -256,17 +236,18 @@
                 <div class="dish-header">
                     <h3 class="dish-name">${dish.original_name}</h3>
                     <div class="action-buttons">
-                        <button class="camera-button" onclick="searchGoogleImages('${dish.original_name.replace(/'/g, '\\'')}')" title="Search on Google Images">
+                        <button class="speak-button" onclick="searchPronunciation('${dish.original_name.replace(/'/g, '\\\'')}')" title="How to pronounce">
+                            <img src="SPEAK.png" alt="Speak" class="speak-icon">
+                        </button>
+                        <button class="camera-button" onclick="searchGoogleImages('${dish.original_name.replace(/'/g, '\\\'')}')" title="Search on Google Images">
                             <img src="Camera-button.png" alt="Camera" class="camera-icon">
                         </button>
                     </div>
                 </div>
                 <div class="divider"></div>
                 <div class="pronunciation-row"><img src="pronun-icon.svg" alt="Pronunciation" class="pronun-icon"><span class="pronun-text">"${(dish.pronunciation || '').replace(/\\"/g, '\\"')}"</span></div>
-                <div class="divider dotted"></div>
+                <div class="divider"></div>
                 <p class="dish-description">${dish.simple_description}</p>
-                <div class="divider dotted"></div>
-                <div class="allergens-row"><span class="allergens-label">Allergens:</span> May include <span class="allergens-text">"${(dish.allergens || '').replace(/\\"/g, '\\"')}"</span></div>
                 <div class="divider"></div>
                 <div class="nutrition-tags">
                     <div class="nutrition-tag">
