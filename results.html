@@ -107,14 +107,19 @@
                 });
                 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    if (errorData.error === 'NOT_MENU_IMAGES') {
-                        // Special handling for non-menu images
-                        hideLoading();
-                        showNonMenuError();
-                        return;
-                    }
-                    throw new Error(errorData.error || `Server error: ${response.status}`);
+                    let message = `Server error: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error === 'NOT_MENU_IMAGES') {
+                            hideLoading();
+                            showNonMenuError();
+                            return;
+                        }
+                        if (errorData.error) message = errorData.error;
+                    } catch (_) {}
+                    hideLoading();
+                    showError(message);
+                    return;
                 }
                 
                 const data = await response.json();
@@ -263,12 +268,17 @@
         
         function showError(errorMessage = '') {
             const errorContainer = document.getElementById('error-container');
-            
+            const errorText = errorContainer.querySelector('.error-text');
+            if (errorText && errorMessage) {
+                errorText.textContent = errorMessage;
+            }
             // Show error container and hide other containers
             errorContainer.style.display = 'block';
             document.getElementById('loading-container').style.display = 'none';
             document.getElementById('results-container').style.display = 'none';
             document.getElementById('non-menu-error-container').style.display = 'none';
+            // Bring into view to avoid being hidden below the fold
+            try { errorContainer.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
         }
         
         function showNonMenuError() {
