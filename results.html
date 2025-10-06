@@ -246,6 +246,21 @@
             const nutrition = (dish && dish.nutrition) ? dish.nutrition : {};
             try { console.log('[Results] createDishCard', { index, name: dish && dish.original_name }); } catch (e) {}
             const nameKey = encodeURIComponent(dish.original_name || '');
+            const hasAllergens = !!(dish.allergens && String(dish.allergens).trim() !== '' && String(dish.allergens).trim().toLowerCase() !== 'none');
+            // Build up to two citation links (prefer server-provided URLs, else fallback to Google searches)
+            let citationUrls = Array.isArray(dish.allergen_citations)
+                ? dish.allergen_citations.filter(u => typeof u === 'string' && /^https?:\/\//i.test(u))
+                : [];
+            if (citationUrls.length < 1) {
+                citationUrls.push(`https://www.google.com/search?q=${encodeURIComponent(`${dish.original_name} allergens`)}`);
+            }
+            if (citationUrls.length < 2) {
+                citationUrls.push(`https://www.google.com/search?q=${encodeURIComponent(`${dish.original_name} ingredients allergens`)}`);
+            }
+            citationUrls = citationUrls.slice(0, 2);
+            const citationsHtml = hasAllergens
+                ? `<span class="citations"> — ${citationUrls.map((url, i) => `<a class=\"citation-link\" href=\"${url}\" target=\"_blank\" rel=\"noopener noreferrer\">Citation ${i + 1}</a>`).join('<span class=\"citation-sep\">, </span>')}</span>`
+                : '';
             
                         card.innerHTML = `
                 <div class="dish-header">
@@ -261,7 +276,7 @@
                 <div class="divider dotted-divider"></div>
                 <p class="dish-description">${dish.simple_description}</p>
                 ${dish.allergens && String(dish.allergens).trim() !== '' && String(dish.allergens).trim().toLowerCase() !== 'none' ? '<div class="divider dotted-divider"></div>' : '<div class="divider"></div>'}
-                <div class="allergens-hook" data-name="${nameKey}">${dish.allergens && String(dish.allergens).trim() !== '' && String(dish.allergens).trim().toLowerCase() !== 'none' ? "<div class=\"allergens-row\"><span class=\"allergens-label\">Allergens:</span> May include " + String(dish.allergens).trim() + "</div><div class=\"divider\"></div>" : ""}</div>
+                <div class="allergens-hook" data-name="${nameKey}">${hasAllergens ? "<div class=\"allergens-row\"><span class=\"allergens-label\">Allergens:</span> May include " + String(dish.allergens).trim() + citationsHtml + "</div><div class=\"divider\"></div>" : ""}</div>
                 <div class="nutrition-tags">
                     <div class="nutrition-tag">
                         <div class="nutrition-icon">

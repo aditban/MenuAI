@@ -521,6 +521,23 @@ body {
     margin-right: 4px;
 }
 
+/* Citation links */
+.citations {
+    color: #767676;
+}
+.citation-link {
+    color: inherit;
+    text-decoration: none; /* no underline */
+    cursor: pointer;
+}
+.citation-link:hover {
+    text-decoration: none;
+    opacity: 0.85;
+}
+.citation-sep {
+    color: #767676;
+}
+
 /* Hide pronunciation button visually but keep in layout for spacing */
 .speak-button {
     opacity: 0;
