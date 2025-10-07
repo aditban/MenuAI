@@ -136,6 +136,7 @@ app.get('/api/test-openai', async (req, res) => {
 app.post('/api/analyze-menu', async (req, res) => {
     try {
         const { images } = req.body;
+        const pageOffset = Number((req.body && req.body.page_offset) || 0) || 0;
         
         if (!images || !Array.isArray(images) || images.length === 0) {
             return res.status(400).json({ 
@@ -176,7 +177,7 @@ app.post('/api/analyze-menu', async (req, res) => {
                 // Attach page number (starting at 1) to each dish so UI can show page badges
                 const dishesWithPage = (Array.isArray(dishes) ? dishes : []).map(d => ({
                     ...d,
-                    page: i + 1
+                    page: i + 1 + pageOffset
                 }));
                 allDishes.push(...dishesWithPage);
                 console.log(`Found ${dishes.length} dishes in image ${i + 1}`);

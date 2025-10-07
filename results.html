@@ -97,45 +97,51 @@
                 console.log('[Results] processMenuImages:start', { imagesCount: Array.isArray(images) ? images.length : 'N/A' });
                 showLoading();
                 
-                // Call the backend API instead of OpenAI directly
-                console.time && console.time('[Results] /api/analyze-menu');
-                const response = await fetch('/api/analyze-menu', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        images: images
-                    })
-                });
-                console.log('[Results] fetch returned', { ok: response.ok, status: response.status });
-                
-                if (!response.ok) {
-                    let message = `Server error: ${response.status}`;
-                    try {
-                        const errorData = await response.json();
-                        if (errorData.error === 'NOT_MENU_IMAGES') {
-                            console.warn('[Results] NOT_MENU_IMAGES error from server');
-                            hideLoading();
-                            showNonMenuError();
-                            return;
-                        }
-                        if (errorData.error) message = errorData.error;
-                    } catch (_) {}
-                    hideLoading();
-                    showError(message);
-                    return;
+                // Batch images to avoid 413 errors
+                const BATCH_SIZE = 2; // keep payloads small
+                let allDishesAccum = [];
+                for (let start = 0; start < images.length; start += BATCH_SIZE) {
+                    const batch = images.slice(start, start + BATCH_SIZE);
+                    const pageOffset = start; // maintain overall page numbering across batches
+                    console.time && console.time(`[Results] /api/analyze-menu batch ${start / BATCH_SIZE + 1}`);
+                    const response = await fetch('/api/analyze-menu', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            images: batch,
+                            page_offset: pageOffset
+                        })
+                    });
+                    console.log('[Results] batch fetch returned', { ok: response.ok, status: response.status, start });
+                    if (!response.ok) {
+                        let message = `Server error: ${response.status}`;
+                        try {
+                            const errorData = await response.json();
+                            if (errorData.error === 'NOT_MENU_IMAGES') {
+                                console.warn('[Results] NOT_MENU_IMAGES error from server');
+                                hideLoading();
+                                showNonMenuError();
+                                return;
+                            }
+                            if (errorData.error) message = errorData.error;
+                        } catch (_) {}
+                        hideLoading();
+                        showError(message);
+                        return;
+                    }
+                    const data = await response.json();
+                    const dishes = (data && Array.isArray(data.dishes)) ? data.dishes : [];
+                    console.timeEnd && console.timeEnd(`[Results] /api/analyze-menu batch ${start / BATCH_SIZE + 1}`);
+                    allDishesAccum = allDishesAccum.concat(dishes);
                 }
-                
-                const data = await response.json();
-                const dishes = (data && Array.isArray(data.dishes)) ? data.dishes : [];
-                console.timeEnd && console.timeEnd('[Results] /api/analyze-menu');
-                console.log('[Results] API success. dishes count:', dishes.length);
-                
+
+                console.log('[Results] All batches complete. Total dishes:', allDishesAccum.length);
                 hideLoading();
                 try {
                     console.log('[Results] displayResults:begin');
-                    displayResults(dishes);
+                    displayResults(allDishesAccum);
                     console.log('[Results] displayResults:end');
                 } catch (renderErr) {
                     console.error('[Results] displayResults failed:', renderErr);
